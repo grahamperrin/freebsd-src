@@ -828,8 +828,8 @@ upgrade_check_params () {
 		echo
 	fi
 
-	# Set EDITOR to /usr/bin/vi if it isn't already set
-	: ${EDITOR:='/usr/bin/vi'}
+	# If EDITOR is not already set, then make it ee
+	: ${EDITOR:='/usr/bin/ee'}
 }
 
 # Perform sanity checks and set some final parameters in
