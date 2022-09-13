@@ -449,7 +449,6 @@ ovpn_new_peer(struct ifnet *ifp, const nvlist_t *nvl)
 	struct ovpn_softc *sc = ifp->if_softc;
 	struct thread *td = curthread;
 	struct socket *so = NULL;
-	u_int fflag;
 	int fd;
 	uint32_t peerid;
 	int ret = 0, i;
@@ -476,8 +475,7 @@ ovpn_new_peer(struct ifnet *ifp, const nvlist_t *nvl)
 	fd = nvlist_get_number(nvl, "fd");
 
 	/* Look up the userspace process and use the fd to find the socket. */
-	ret = getsock_cap(td, fd, &cap_connect_rights, &fp,
-	    &fflag, NULL);
+	ret = getsock(td, fd, &cap_connect_rights, &fp);
 	if (ret != 0)
 		return (ret);
 
@@ -513,7 +511,7 @@ ovpn_new_peer(struct ifnet *ifp, const nvlist_t *nvl)
 	callout_init_rm(&peer->ping_send, &sc->lock, CALLOUT_SHAREDLOCK);
 	callout_init_rm(&peer->ping_rcv, &sc->lock, 0);
 
-	ret = (*so->so_proto->pr_usrreqs->pru_sockaddr)(so, &name);
+	ret = so->so_proto->pr_sockaddr(so, &name);
 	if (ret)
 		goto error;
 
@@ -556,6 +554,12 @@ ovpn_new_peer(struct ifnet *ifp, const nvlist_t *nvl)
 	/* Disallow peer id re-use. */
 	if (ovpn_find_peer(sc, peerid) != NULL) {
 		ret = EEXIST;
+		goto error_locked;
+	}
+
+	/* Make sure this is really a UDP socket. */
+	if (so->so_type != SOCK_DGRAM || so->so_proto->pr_type != SOCK_DGRAM) {
+		ret = EPROTOTYPE;
 		goto error_locked;
 	}
 
@@ -1576,6 +1580,7 @@ ovpn_get_af(struct mbuf *m)
 	return (0);
 }
 
+#ifdef INET
 static struct ovpn_kpeer *
 ovpn_find_peer_by_ip(struct ovpn_softc *sc, const struct in_addr addr)
 {
@@ -1594,7 +1599,9 @@ ovpn_find_peer_by_ip(struct ovpn_softc *sc, const struct in_addr addr)
 
 	return (peer);
 }
+#endif
 
+#ifdef INET6
 static struct ovpn_kpeer *
 ovpn_find_peer_by_ip6(struct ovpn_softc *sc, const struct in6_addr *addr)
 {
@@ -1613,6 +1620,7 @@ ovpn_find_peer_by_ip6(struct ovpn_softc *sc, const struct in6_addr *addr)
 
 	return (peer);
 }
+#endif
 
 static struct ovpn_kpeer *
 ovpn_route_peer(struct ovpn_softc *sc, struct mbuf **m0,
@@ -1988,6 +1996,7 @@ ovpn_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 	if (__predict_false(ifp->if_link_state != LINK_STATE_UP)) {
 		OVPN_COUNTER_ADD(sc, lost_data_pkts_out, 1);
 		OVPN_RUNLOCK(sc);
+		m_freem(m);
 		return (ENETDOWN);
 	}
 
@@ -2005,6 +2014,7 @@ ovpn_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 		/* No destination. */
 		OVPN_COUNTER_ADD(sc, lost_data_pkts_out, 1);
 		OVPN_RUNLOCK(sc);
+		m_freem(m);
 		return (ENETDOWN);
 	}
 

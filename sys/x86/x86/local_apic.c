@@ -434,6 +434,8 @@ lapic_init(vm_paddr_t addr)
 	int i;
 	bool arat;
 
+	TSENTER();
+
 	/*
 	 * Enable x2APIC mode if possible. Map the local APIC
 	 * registers page.
@@ -531,7 +533,7 @@ lapic_init(vm_paddr_t addr)
 	}
 
 #ifdef SMP
-#define	LOOPS	100000
+#define	LOOPS	1000
 	/*
 	 * Calibrate the busy loop waiting for IPI ack in xAPIC mode.
 	 * lapic_ipi_wait_mult contains the number of iterations which
@@ -563,6 +565,8 @@ lapic_init(vm_paddr_t addr)
 	}
 #undef LOOPS
 #endif /* SMP */
+
+	TSEXIT();
 }
 
 /*
@@ -1701,7 +1705,7 @@ apic_idt_to_irq(u_int apic_id, u_int vector)
 /*
  * Dump data about APIC IDT vector mappings.
  */
-DB_SHOW_COMMAND(apic, db_show_apic)
+DB_SHOW_COMMAND_FLAGS(apic, db_show_apic, DB_CMD_MEMSAFE)
 {
 	struct intsrc *isrc;
 	int i, verbose;
@@ -1765,7 +1769,7 @@ dump_mask(const char *prefix, uint32_t v, int base)
 }
 
 /* Show info from the lapic regs for this CPU. */
-DB_SHOW_COMMAND(lapic, db_show_lapic)
+DB_SHOW_COMMAND_FLAGS(lapic, db_show_lapic, DB_CMD_MEMSAFE)
 {
 	uint32_t v;
 

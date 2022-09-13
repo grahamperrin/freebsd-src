@@ -184,7 +184,7 @@ VNET_DEFINE_STATIC(uma_zone_t, ipfw_cntr_zone);
 #define	V_ipfw_cntr_zone		VNET(ipfw_cntr_zone)
 
 void
-ipfw_init_counters()
+ipfw_init_counters(void)
 {
 
 	V_ipfw_cntr_zone = uma_zcreate("IPFW counters",
@@ -193,7 +193,7 @@ ipfw_init_counters()
 }
 
 void
-ipfw_destroy_counters()
+ipfw_destroy_counters(void)
 {
 
 	uma_zdestroy(V_ipfw_cntr_zone);
@@ -2000,12 +2000,17 @@ check_ipfw_rule_body(ipfw_insn *cmd, int cmd_len, struct rule_check_info *ci)
  			goto check_action;
 		case O_CHECK_STATE:
 			ci->object_opcodes++;
+			goto check_size;
+		case O_REJECT:
+			/* "unreach needfrag" has variable len. */
+			if ((cmdlen == F_INSN_SIZE(ipfw_insn) ||
+			    cmdlen == F_INSN_SIZE(ipfw_insn_u16)))
+				goto check_action;
 			/* FALLTHROUGH */
 		case O_FORWARD_MAC: /* XXX not implemented yet */
 		case O_COUNT:
 		case O_ACCEPT:
 		case O_DENY:
-		case O_REJECT:
 		case O_SETDSCP:
 #ifdef INET6
 		case O_UNREACH6:
@@ -3238,7 +3243,7 @@ update_opcode_kidx(ipfw_insn *cmd, uint16_t idx)
 }
 
 void
-ipfw_init_obj_rewriter()
+ipfw_init_obj_rewriter(void)
 {
 
 	ctl3_rewriters = NULL;
@@ -3246,7 +3251,7 @@ ipfw_init_obj_rewriter()
 }
 
 void
-ipfw_destroy_obj_rewriter()
+ipfw_destroy_obj_rewriter(void)
 {
 
 	if (ctl3_rewriters != NULL)
@@ -3474,7 +3479,7 @@ find_unref_sh(struct ipfw_sopt_handler *psh)
 }
 
 void
-ipfw_init_sopt_handler()
+ipfw_init_sopt_handler(void)
 {
 
 	CTL3_LOCK_INIT();
@@ -3482,7 +3487,7 @@ ipfw_init_sopt_handler()
 }
 
 void
-ipfw_destroy_sopt_handler()
+ipfw_destroy_sopt_handler(void)
 {
 
 	IPFW_DEL_SOPT_HANDLER(1, scodes);

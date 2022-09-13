@@ -1235,6 +1235,7 @@ options 	AUDIT
 options 	MAC
 options 	MAC_BIBA
 options 	MAC_BSDEXTENDED
+options 	MAC_DDB
 options 	MAC_IFOFF
 options 	MAC_LOMAC
 options 	MAC_MLS
@@ -1246,6 +1247,12 @@ options 	MAC_PRIORITY
 options 	MAC_SEEOTHERUIDS
 options 	MAC_STUB
 options 	MAC_TEST
+options 	MAC_VERIEXEC
+options 	MAC_VERIEXEC_SHA1
+options 	MAC_VERIEXEC_SHA256
+options 	MAC_VERIEXEC_SHA384
+options 	MAC_VERIEXEC_SHA512
+device		mac_veriexec_parser
 
 # Support for Capsicum
 options 	CAPABILITIES	# fine-grained rights on file descriptors
@@ -2012,8 +2019,8 @@ device		rtwnfw
 # mismatch between the mbuf size assumed by the kernel and the mbuf size
 # assumed by a module.  The only driver that currently has the ability to
 # detect a mismatch is ti(4).
-options 	MCLSHIFT=12	# mbuf cluster shift in bits, 12 == 4KB
-options 	MSIZE=512	# mbuf size in bytes
+options 	MCLSHIFT=11	# mbuf cluster shift in bits, 11 == 2KB
+options 	MSIZE=256	# mbuf size in bytes
 
 #
 # Sound drivers

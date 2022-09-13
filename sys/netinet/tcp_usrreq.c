@@ -103,9 +103,7 @@ __FBSDID("$FreeBSD$");
 #ifdef TCPPCAP
 #include <netinet/tcp_pcap.h>
 #endif
-#ifdef TCPDEBUG
 #include <netinet/tcp_debug.h>
-#endif
 #ifdef TCP_OFFLOAD
 #include <netinet/tcp_offload.h>
 #endif
@@ -172,11 +170,9 @@ tcp_usr_attach(struct socket *so, int proto, struct thread *td)
 	KASSERT(inp == NULL, ("tcp_usr_attach: inp != NULL"));
 	TCPDEBUG1();
 
-	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
-		error = soreserve(so, V_tcp_sendspace, V_tcp_recvspace);
-		if (error)
-			goto out;
-	}
+	error = soreserve(so, V_tcp_sendspace, V_tcp_recvspace);
+	if (error)
+		goto out;
 
 	so->so_rcv.sb_flags |= SB_AUTOSIZE;
 	so->so_snd.sb_flags |= SB_AUTOSIZE;
@@ -184,16 +180,6 @@ tcp_usr_attach(struct socket *so, int proto, struct thread *td)
 	if (error)
 		goto out;
 	inp = sotoinpcb(so);
-#ifdef INET6
-	if (inp->inp_vflag & INP_IPV6PROTO) {
-		inp->inp_vflag |= INP_IPV6;
-		if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0)
-			inp->inp_vflag |= INP_IPV4;
-		inp->in6p_hops = -1;	/* use kernel default */
-	}
-	else
-#endif
-		inp->inp_vflag |= INP_IPV4;
 	tp = tcp_newtcpcb(inp);
 	if (tp == NULL) {
 		error = ENOBUFS;
@@ -707,20 +693,18 @@ tcp6_usr_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 	inp->inp_vflag &= ~INP_IPV4;
 	inp->inp_vflag |= INP_IPV6;
 	inp->inp_inc.inc_flags |= INC_ISIPV6;
+	NET_EPOCH_ENTER(et);
 	if ((error = tcp6_connect(tp, nam, td)) != 0)
-		goto out;
+		goto out_in_epoch;
 #ifdef TCP_OFFLOAD
 	if (registered_toedevs > 0 &&
 	    (so->so_options & SO_NO_OFFLOAD) == 0 &&
 	    (error = tcp_offload_connect(so, nam)) == 0)
-		goto out;
+		goto out_in_epoch;
 #endif
 	tcp_timer_activate(tp, TT_KEEP, TP_KEEPINIT(tp));
-	NET_EPOCH_ENTER(et);
 	error = tcp_output(tp);
-#ifdef INET
 out_in_epoch:
-#endif
 	NET_EPOCH_EXIT(et);
 out:
 	KASSERT(error >= 0, ("TCP stack %s requested tcp_drop(%p) at connect()"
@@ -1476,48 +1460,58 @@ out:
 }
 
 #ifdef INET
-struct pr_usrreqs tcp_usrreqs = {
-	.pru_abort =		tcp_usr_abort,
-	.pru_accept =		tcp_usr_accept,
-	.pru_attach =		tcp_usr_attach,
-	.pru_bind =		tcp_usr_bind,
-	.pru_connect =		tcp_usr_connect,
-	.pru_control =		in_control,
-	.pru_detach =		tcp_usr_detach,
-	.pru_disconnect =	tcp_usr_disconnect,
-	.pru_listen =		tcp_usr_listen,
-	.pru_peeraddr =		in_getpeeraddr,
-	.pru_rcvd =		tcp_usr_rcvd,
-	.pru_rcvoob =		tcp_usr_rcvoob,
-	.pru_send =		tcp_usr_send,
-	.pru_ready =		tcp_usr_ready,
-	.pru_shutdown =		tcp_usr_shutdown,
-	.pru_sockaddr =		in_getsockaddr,
-	.pru_sosetlabel =	in_pcbsosetlabel,
-	.pru_close =		tcp_usr_close,
+struct protosw tcp_protosw = {
+	.pr_type =		SOCK_STREAM,
+	.pr_protocol =		IPPROTO_TCP,
+	.pr_flags =		PR_CONNREQUIRED | PR_IMPLOPCL | PR_WANTRCVD |
+				    PR_CAPATTACH,
+	.pr_ctloutput =		tcp_ctloutput,
+	.pr_abort =		tcp_usr_abort,
+	.pr_accept =		tcp_usr_accept,
+	.pr_attach =		tcp_usr_attach,
+	.pr_bind =		tcp_usr_bind,
+	.pr_connect =		tcp_usr_connect,
+	.pr_control =		in_control,
+	.pr_detach =		tcp_usr_detach,
+	.pr_disconnect =	tcp_usr_disconnect,
+	.pr_listen =		tcp_usr_listen,
+	.pr_peeraddr =		in_getpeeraddr,
+	.pr_rcvd =		tcp_usr_rcvd,
+	.pr_rcvoob =		tcp_usr_rcvoob,
+	.pr_send =		tcp_usr_send,
+	.pr_ready =		tcp_usr_ready,
+	.pr_shutdown =		tcp_usr_shutdown,
+	.pr_sockaddr =		in_getsockaddr,
+	.pr_sosetlabel =	in_pcbsosetlabel,
+	.pr_close =		tcp_usr_close,
 };
 #endif /* INET */
 
 #ifdef INET6
-struct pr_usrreqs tcp6_usrreqs = {
-	.pru_abort =		tcp_usr_abort,
-	.pru_accept =		tcp6_usr_accept,
-	.pru_attach =		tcp_usr_attach,
-	.pru_bind =		tcp6_usr_bind,
-	.pru_connect =		tcp6_usr_connect,
-	.pru_control =		in6_control,
-	.pru_detach =		tcp_usr_detach,
-	.pru_disconnect =	tcp_usr_disconnect,
-	.pru_listen =		tcp6_usr_listen,
-	.pru_peeraddr =		in6_mapped_peeraddr,
-	.pru_rcvd =		tcp_usr_rcvd,
-	.pru_rcvoob =		tcp_usr_rcvoob,
-	.pru_send =		tcp_usr_send,
-	.pru_ready =		tcp_usr_ready,
-	.pru_shutdown =		tcp_usr_shutdown,
-	.pru_sockaddr =		in6_mapped_sockaddr,
-	.pru_sosetlabel =	in_pcbsosetlabel,
-	.pru_close =		tcp_usr_close,
+struct protosw tcp6_protosw = {
+	.pr_type =		SOCK_STREAM,
+	.pr_protocol =		IPPROTO_TCP,
+	.pr_flags =		PR_CONNREQUIRED | PR_IMPLOPCL |PR_WANTRCVD |
+				    PR_CAPATTACH,
+	.pr_ctloutput =		tcp_ctloutput,
+	.pr_abort =		tcp_usr_abort,
+	.pr_accept =		tcp6_usr_accept,
+	.pr_attach =		tcp_usr_attach,
+	.pr_bind =		tcp6_usr_bind,
+	.pr_connect =		tcp6_usr_connect,
+	.pr_control =		in6_control,
+	.pr_detach =		tcp_usr_detach,
+	.pr_disconnect =	tcp_usr_disconnect,
+	.pr_listen =		tcp6_usr_listen,
+	.pr_peeraddr =		in6_mapped_peeraddr,
+	.pr_rcvd =		tcp_usr_rcvd,
+	.pr_rcvoob =		tcp_usr_rcvoob,
+	.pr_send =		tcp_usr_send,
+	.pr_ready =		tcp_usr_ready,
+	.pr_shutdown =		tcp_usr_shutdown,
+	.pr_sockaddr =		in6_mapped_sockaddr,
+	.pr_sosetlabel =	in_pcbsosetlabel,
+	.pr_close =		tcp_usr_close,
 };
 #endif /* INET6 */
 
@@ -2984,8 +2978,8 @@ db_print_tflags(u_int t_flags)
 		db_printf("%sTF_MORETOCOME", comma ? ", " : "");
 		comma = 1;
 	}
-	if (t_flags & TF_LQ_OVERFLOW) {
-		db_printf("%sTF_LQ_OVERFLOW", comma ? ", " : "");
+	if (t_flags & TF_INCQUEUE) {
+		db_printf("%sTF_INCQUEUE", comma ? ", " : "");
 		comma = 1;
 	}
 	if (t_flags & TF_LASTIDLE) {

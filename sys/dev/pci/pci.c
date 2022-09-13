@@ -3170,6 +3170,21 @@ pci_find_bar(device_t dev, int reg)
 	return (NULL);
 }
 
+struct pci_map *
+pci_first_bar(device_t dev)
+{
+	struct pci_devinfo *dinfo;
+
+	dinfo = device_get_ivars(dev);
+	return (STAILQ_FIRST(&dinfo->cfg.maps));
+}
+
+struct pci_map *
+pci_next_bar(struct pci_map *pm)
+{
+	return (STAILQ_NEXT(pm, pm_link));
+}
+
 int
 pci_bar_enabled(device_t dev, struct pci_map *pm)
 {
@@ -3316,7 +3331,7 @@ pci_add_map(device_t bus, device_t dev, int reg, struct resource_list *rl,
 	 * not allow that.  It is best to ignore such entries for the
 	 * moment.  These will be allocated later if the driver specifically
 	 * requests them.  However, some removable buses look better when
-	 * all resources are allocated, so allow '0' to be overriden.
+	 * all resources are allocated, so allow '0' to be overridden.
 	 *
 	 * Similarly treat maps whose values is the same as the test value
 	 * read back.  These maps have had all f's written to them by the
@@ -5376,7 +5391,7 @@ pci_write_ivar(device_t dev, device_t child, int which, uintptr_t value)
  * List resources based on pci map registers, used for within ddb
  */
 
-DB_SHOW_COMMAND(pciregs, db_pci_dump)
+DB_SHOW_COMMAND_FLAGS(pciregs, db_pci_dump, DB_CMD_MEMSAFE)
 {
 	struct pci_devinfo *dinfo;
 	struct devlist *devlist_head;
@@ -6787,7 +6802,7 @@ pci_print_faulted_dev(void)
 }
 
 #ifdef DDB
-DB_SHOW_COMMAND(pcierr, pci_print_faulted_dev_db)
+DB_SHOW_COMMAND_FLAGS(pcierr, pci_print_faulted_dev_db, DB_CMD_MEMSAFE)
 {
 
 	pci_print_faulted_dev();
@@ -6816,7 +6831,7 @@ db_clear_pcie_errors(const struct pci_devinfo *dinfo)
 		pci_write_config(dev, aer + PCIR_AER_COR_STATUS, r, 4);
 }
 
-DB_COMMAND(pci_clearerr, db_pci_clearerr)
+DB_COMMAND_FLAGS(pci_clearerr, db_pci_clearerr, DB_CMD_MEMSAFE)
 {
 	struct pci_devinfo *dinfo;
 	device_t dev;

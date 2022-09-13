@@ -264,7 +264,6 @@ int __getosreldate(void);
 func_ptr_type _rtld(Elf_Addr *sp, func_ptr_type *exit_proc, Obj_Entry **objp);
 Elf_Addr _rtld_bind(Obj_Entry *obj, Elf_Size reloff);
 
-
 int npagesizes;
 static int osreldate;
 size_t *pagesizes;
@@ -1222,7 +1221,7 @@ origin_subst(Obj_Entry *obj, const char *real)
 	res = __DECONST(char *, real);
 	for (i = 0; i < (int)nitems(tokens); i++) {
 		res = origin_subst_one(tokens[i].pass_obj ? obj : NULL,
-		    res, tokens[i].kw, tokens[i].subst, i == 0);
+		    res, tokens[i].kw, tokens[i].subst, i != 0);
 	}
 	return (res);
 }
@@ -5033,7 +5032,7 @@ trace_loaded_objects(Obj_Entry *obj, bool show_preload)
 				path = "not found";
 
 			name = obj->strtab + needed->name;
-			trace_print_obj(obj, name, path, main_local,
+			trace_print_obj(needed->obj, name, path, main_local,
 			    fmt1, fmt2);
 		}
 	}

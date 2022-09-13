@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -74,7 +74,8 @@ static boolean_t blake3_is_sse2_supported(void)
 {
 #if defined(__x86_64)
 	return (kfpu_allowed() && zfs_sse2_available());
-#elif defined(__PPC64__)
+#elif defined(__PPC64__) && defined(__linux__)
+	/* TODO: implement vsx handler or FreeBSD */
 	return (kfpu_allowed() && zfs_vsx_available());
 #else
 	return (kfpu_allowed());
@@ -140,7 +141,8 @@ static boolean_t blake3_is_sse41_supported(void)
 {
 #if defined(__x86_64)
 	return (kfpu_allowed() && zfs_sse4_1_available());
-#elif defined(__PPC64__)
+#elif defined(__PPC64__) && defined(__linux__)
+	/* TODO: implement vsx handler or FreeBSD */
 	return (kfpu_allowed() && zfs_vsx_available());
 #else
 	return (kfpu_allowed());

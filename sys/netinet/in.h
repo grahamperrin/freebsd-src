@@ -383,7 +383,13 @@ __END_DECLS
 #define	IN_BADCLASS(i)		(((in_addr_t)(i) & 0xf0000000) == 0xf0000000)
 
 #define IN_LINKLOCAL(i)		(((in_addr_t)(i) & 0xffff0000) == 0xa9fe0000)
+#ifdef _KERNEL
+#define IN_LOOPBACK(i) \
+    (((in_addr_t)(i) & V_in_loopback_mask) == 0x7f000000)
+#define IN_LOOPBACK_MASK_DFLT	0xff000000
+#else
 #define IN_LOOPBACK(i)		(((in_addr_t)(i) & 0xff000000) == 0x7f000000)
+#endif
 #define IN_ZERONET(i)		(((in_addr_t)(i) & 0xff000000) == 0)
 
 #define	IN_PRIVATE(i)	((((in_addr_t)(i) & 0xff000000) == 0x0a000000) || \
@@ -413,6 +419,18 @@ __END_DECLS
 #endif /* IN_HISTORICAL_NETS */
 
 #define	IN_RFC3021_MASK		((in_addr_t)0xfffffffe)
+
+#ifdef _KERNEL
+#include <net/vnet.h>
+
+VNET_DECLARE(bool, ip_allow_net0);
+VNET_DECLARE(bool, ip_allow_net240);
+/* Address space reserved for loopback */
+VNET_DECLARE(uint32_t, in_loopback_mask);
+#define	V_ip_allow_net0		VNET(ip_allow_net0)
+#define	V_ip_allow_net240	VNET(ip_allow_net240)
+#define	V_in_loopback_mask	VNET(in_loopback_mask)
+#endif
 
 /*
  * Options for use with [gs]etsockopt at the IP level.
@@ -678,6 +696,23 @@ void	 in_ifdetach(struct ifnet *);
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 #define	sintosa(sin)	((struct sockaddr *)(sin))
 #define	ifatoia(ifa)	((struct in_ifaddr *)(ifa))
+
+typedef int	ipproto_input_t(struct mbuf **, int *, int);
+typedef void	ipproto_ctlinput_t(int, struct sockaddr *, void *);
+int	ipproto_register(uint8_t, ipproto_input_t, ipproto_ctlinput_t);
+int	ipproto_unregister(uint8_t);
+int	ip6proto_register(uint8_t, ipproto_input_t, ipproto_ctlinput_t);
+int	ip6proto_unregister(uint8_t);
+#define	IPPROTO_REGISTER(prot, input, ctl)	do {			\
+	int error __diagused;						\
+	error = ipproto_register(prot, input, ctl);			\
+	MPASS(error == 0);						\
+} while (0)
+#define	IP6PROTO_REGISTER(prot, input, ctl)	do {			\
+	int error __diagused;						\
+	error = ip6proto_register(prot, input, ctl);			\
+	MPASS(error == 0);						\
+} while (0)
 #endif /* _KERNEL */
 
 /* INET6 stuff */

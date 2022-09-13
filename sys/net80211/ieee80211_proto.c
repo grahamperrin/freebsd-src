@@ -273,12 +273,7 @@ ieee80211_proto_attach(struct ieee80211com *ic)
 		+ IEEE80211_WEP_IVLEN + IEEE80211_WEP_KIDLEN
 		+ IEEE80211_WEP_EXTIVLEN;
 	/* XXX no way to recalculate on ifdetach */
-	if (ALIGN(hdrlen) > max_linkhdr) {
-		/* XXX sanity check... */
-		max_linkhdr = ALIGN(hdrlen);
-		max_hdr = max_linkhdr + max_protohdr;
-		max_datalen = MHLEN - max_hdr;
-	}
+	max_linkhdr_grow(ALIGN(hdrlen));
 	//ic->ic_protmode = IEEE80211_PROT_CTSONLY;
 
 	TASK_INIT(&ic->ic_parent_task, 0, parent_updown, ic);
@@ -602,7 +597,7 @@ ieee80211_dump_pkt(struct ieee80211com *ic,
 		printf(" QoS [TID %u%s]", qwh->i_qos[0] & IEEE80211_QOS_TID,
 			qwh->i_qos[0] & IEEE80211_QOS_ACKPOLICY ? " ACM" : "");
 	}
-	if (wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+	if (IEEE80211_IS_PROTECTED(wh)) {
 		int off;
 
 		off = ieee80211_anyhdrspace(ic, wh);
@@ -1067,7 +1062,7 @@ vap_update_ht_protmode(void *arg, int npending)
 	struct ieee80211vap *vap = arg;
 	struct ieee80211vap *iv;
 	struct ieee80211com *ic = vap->iv_ic;
-	int num_vaps = 0, num_pure = 0, num_mixed = 0;
+	int num_vaps = 0, num_pure = 0;
 	int num_optional = 0, num_ht2040 = 0, num_nonht = 0;
 	int num_ht_sta = 0, num_ht40_sta = 0, num_sta = 0;
 	int num_nonhtpr = 0;
@@ -1107,9 +1102,6 @@ vap_update_ht_protmode(void *arg, int npending)
 			break;
 		case IEEE80211_HTINFO_OPMODE_HT20PR:
 			num_ht2040++;
-			break;
-		case IEEE80211_HTINFO_OPMODE_MIXED:
-			num_mixed++;
 			break;
 		}
 
@@ -1795,7 +1787,7 @@ ieee80211_wme_vap_getparams(struct ieee80211vap *vap, struct chanAccParams *wp)
 }
 
 /*
- * For NICs which only support one set of WME paramaters (ie, softmac NICs)
+ * For NICs which only support one set of WME parameters (ie, softmac NICs)
  * there may be different VAP WME parameters but only one is "active".
  * This returns the "NIC" WME parameters for the currently active
  * context.

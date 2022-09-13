@@ -1643,7 +1643,7 @@ kern_linkat_vp(struct thread *td, struct vnode *vp, int fd, const char *path,
 			vput(nd.ni_dvp);
 			vrele(vp);
 			return (EXDEV);
-		} else if ((error = vn_lock(vp, LK_EXCLUSIVE)) == 0) {
+		} else if (vn_lock(vp, LK_EXCLUSIVE) == 0) {
 			error = can_hardlink(vp, td->td_ucred);
 #ifdef MAC
 			if (error == 0)
@@ -2450,9 +2450,10 @@ kern_statat(struct thread *td, int flag, int fd, const char *path,
 		return (error);
 	}
 	error = VOP_STAT(nd.ni_vp, sbp, td->td_ucred, NOCRED);
-	if (error == 0) {
-		if (__predict_false(hook != NULL))
+	if (__predict_false(hook != NULL)) {
+		if (error == 0) {
 			hook(nd.ni_vp, sbp);
+		}
 	}
 	NDFREE_NOTHING(&nd);
 	vput(nd.ni_vp);

@@ -2301,7 +2301,7 @@ pv_to_chunk(pv_entry_t pv)
 #define PV_PMAP(pv) (pv_to_chunk(pv)->pc_pmap)
 
 #define	PC_FREE0_9	0xfffffffful	/* Free values for index 0 through 9 */
-#define	PC_FREE10	0x0000fffful	/* Free values for index 10 */
+#define	PC_FREE10	((1ul << (_NPCPV % 32)) - 1)	/* Free values for index 10 */
 
 static const uint32_t pc_freemask[_NPCM] = {
 	PC_FREE0_9, PC_FREE0_9, PC_FREE0_9,
@@ -5894,7 +5894,7 @@ pmap_trm_import(void *unused __unused, vmem_size_t size, int flags,
 	vmem_addr_t af, addr, prev_addr;
 	pt_entry_t *trm_pte;
 
-	prev_addr = atomic_load_long(&pmap_trm_arena_last);
+	prev_addr = atomic_load_int(&pmap_trm_arena_last);
 	size = round_page(size) + trm_guard;
 	for (;;) {
 		if (prev_addr + size < prev_addr || prev_addr + size < size ||

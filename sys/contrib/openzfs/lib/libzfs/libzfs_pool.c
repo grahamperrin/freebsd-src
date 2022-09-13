@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -119,7 +119,7 @@ zpool_get_prop_string(zpool_handle_t *zhp, zpool_prop_t prop,
     zprop_source_t *src)
 {
 	nvlist_t *nv, *nvl;
-	char *value;
+	const char *value;
 	zprop_source_t source;
 
 	nvl = zhp->zpool_props;
@@ -128,7 +128,7 @@ zpool_get_prop_string(zpool_handle_t *zhp, zpool_prop_t prop,
 		value = fnvlist_lookup_string(nv, ZPROP_VALUE);
 	} else {
 		source = ZPROP_SRC_DEFAULT;
-		if ((value = (char *)zpool_prop_default_string(prop)) == NULL)
+		if ((value = zpool_prop_default_string(prop)) == NULL)
 			value = "-";
 	}
 
@@ -2111,7 +2111,7 @@ zpool_import_props(libzfs_handle_t *hdl, nvlist_t *config, const char *newname,
 		case EREMOTEIO:
 			if (nv != NULL && nvlist_lookup_nvlist(nv,
 			    ZPOOL_CONFIG_LOAD_INFO, &nvinfo) == 0) {
-				char *hostname = "<unknown>";
+				const char *hostname = "<unknown>";
 				uint64_t hostid = 0;
 				mmp_state_t mmp_state;
 
@@ -2896,154 +2896,6 @@ zpool_find_vdev(zpool_handle_t *zhp, const char *path, boolean_t *avail_spare,
 	fnvlist_free(search);
 
 	return (ret);
-}
-
-static int
-vdev_is_online(nvlist_t *nv)
-{
-	uint64_t ival;
-
-	if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_OFFLINE, &ival) == 0 ||
-	    nvlist_lookup_uint64(nv, ZPOOL_CONFIG_FAULTED, &ival) == 0 ||
-	    nvlist_lookup_uint64(nv, ZPOOL_CONFIG_REMOVED, &ival) == 0)
-		return (0);
-
-	return (1);
-}
-
-/*
- * Helper function for zpool_get_physpaths().
- */
-static int
-vdev_get_one_physpath(nvlist_t *config, char *physpath, size_t physpath_size,
-    size_t *bytes_written)
-{
-	size_t bytes_left, pos, rsz;
-	char *tmppath;
-	const char *format;
-
-	if (nvlist_lookup_string(config, ZPOOL_CONFIG_PHYS_PATH,
-	    &tmppath) != 0)
-		return (EZFS_NODEVICE);
-
-	pos = *bytes_written;
-	bytes_left = physpath_size - pos;
-	format = (pos == 0) ? "%s" : " %s";
-
-	rsz = snprintf(physpath + pos, bytes_left, format, tmppath);
-	*bytes_written += rsz;
-
-	if (rsz >= bytes_left) {
-		/* if physpath was not copied properly, clear it */
-		if (bytes_left != 0) {
-			physpath[pos] = 0;
-		}
-		return (EZFS_NOSPC);
-	}
-	return (0);
-}
-
-static int
-vdev_get_physpaths(nvlist_t *nv, char *physpath, size_t phypath_size,
-    size_t *rsz, boolean_t is_spare)
-{
-	char *type;
-	int ret;
-
-	if (nvlist_lookup_string(nv, ZPOOL_CONFIG_TYPE, &type) != 0)
-		return (EZFS_INVALCONFIG);
-
-	if (strcmp(type, VDEV_TYPE_DISK) == 0) {
-		/*
-		 * An active spare device has ZPOOL_CONFIG_IS_SPARE set.
-		 * For a spare vdev, we only want to boot from the active
-		 * spare device.
-		 */
-		if (is_spare) {
-			uint64_t spare = 0;
-			(void) nvlist_lookup_uint64(nv, ZPOOL_CONFIG_IS_SPARE,
-			    &spare);
-			if (!spare)
-				return (EZFS_INVALCONFIG);
-		}
-
-		if (vdev_is_online(nv)) {
-			if ((ret = vdev_get_one_physpath(nv, physpath,
-			    phypath_size, rsz)) != 0)
-				return (ret);
-		}
-	} else if (strcmp(type, VDEV_TYPE_MIRROR) == 0 ||
-	    strcmp(type, VDEV_TYPE_RAIDZ) == 0 ||
-	    strcmp(type, VDEV_TYPE_REPLACING) == 0 ||
-	    (is_spare = (strcmp(type, VDEV_TYPE_SPARE) == 0))) {
-		nvlist_t **child;
-		uint_t count;
-		int i, ret;
-
-		if (nvlist_lookup_nvlist_array(nv,
-		    ZPOOL_CONFIG_CHILDREN, &child, &count) != 0)
-			return (EZFS_INVALCONFIG);
-
-		for (i = 0; i < count; i++) {
-			ret = vdev_get_physpaths(child[i], physpath,
-			    phypath_size, rsz, is_spare);
-			if (ret == EZFS_NOSPC)
-				return (ret);
-		}
-	}
-
-	return (EZFS_POOL_INVALARG);
-}
-
-/*
- * Get phys_path for a root pool config.
- * Return 0 on success; non-zero on failure.
- */
-static int
-zpool_get_config_physpath(nvlist_t *config, char *physpath, size_t phypath_size)
-{
-	size_t rsz;
-	nvlist_t *vdev_root;
-	nvlist_t **child;
-	uint_t count;
-	char *type;
-
-	rsz = 0;
-
-	if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
-	    &vdev_root) != 0)
-		return (EZFS_INVALCONFIG);
-
-	if (nvlist_lookup_string(vdev_root, ZPOOL_CONFIG_TYPE, &type) != 0 ||
-	    nvlist_lookup_nvlist_array(vdev_root, ZPOOL_CONFIG_CHILDREN,
-	    &child, &count) != 0)
-		return (EZFS_INVALCONFIG);
-
-	/*
-	 * root pool can only have a single top-level vdev.
-	 */
-	if (strcmp(type, VDEV_TYPE_ROOT) != 0 || count != 1)
-		return (EZFS_POOL_INVALARG);
-
-	(void) vdev_get_physpaths(child[0], physpath, phypath_size, &rsz,
-	    B_FALSE);
-
-	/* No online devices */
-	if (rsz == 0)
-		return (EZFS_NODEVICE);
-
-	return (0);
-}
-
-/*
- * Get phys_path for a root pool
- * Return 0 on success; non-zero on failure.
- */
-int
-zpool_get_physpath(zpool_handle_t *zhp, char *physpath, size_t phypath_size)
-{
-	return (zpool_get_config_physpath(zhp->zpool_config, physpath,
-	    phypath_size));
 }
 
 /*
@@ -5029,7 +4881,7 @@ zpool_get_vdev_prop_value(nvlist_t *nvprop, vdev_prop_t prop, char *prop_name,
     char *buf, size_t len, zprop_source_t *srctype, boolean_t literal)
 {
 	nvlist_t *nv;
-	char *strval;
+	const char *strval;
 	uint64_t intval;
 	zprop_source_t src = ZPROP_SRC_NONE;
 
@@ -5059,8 +4911,7 @@ zpool_get_vdev_prop_value(nvlist_t *nvprop, vdev_prop_t prop, char *prop_name,
 			strval = fnvlist_lookup_string(nv, ZPROP_VALUE);
 		} else {
 			src = ZPROP_SRC_DEFAULT;
-			if ((strval = (char *)vdev_prop_default_string(prop))
-			    == NULL)
+			if ((strval = vdev_prop_default_string(prop)) == NULL)
 				strval = "-";
 		}
 		(void) strlcpy(buf, strval, len);

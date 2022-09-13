@@ -178,6 +178,15 @@ OLD_FILES+=usr/share/man/man8/autounmountd.8.gz
 OLD_DIRS+=etc/autofs
 .endif
 
+.if ${MK_BEARSSL} == no
+OLD_FILES+=usr/lib/libbearssl.a
+OLD_FILES+=usr/lib/libbearssl.so
+OLD_LIBS+=usr/lib/libbearssl.so.5
+OLD_FILES+=usr/lib/libsecureboot.a
+OLD_FILES+=usr/lib/libsecureboot.so
+OLD_LIBS+=usr/lib/libsecureboot.so.5
+.endif
+
 .if ${MK_BHYVE} == no
 OLD_FILES+=usr/lib/libvmmapi.a
 OLD_FILES+=usr/lib/libvmmapi.so
@@ -2455,6 +2464,52 @@ OLD_FILES+=usr/bin/mkcsmapper
 OLD_FILES+=usr/bin/mkesdb
 OLD_FILES+=usr/include/_libiconv_compat.h
 OLD_FILES+=usr/include/iconv.h
+OLD_LIBS+=usr/lib/i18n/libBIG5.so.5
+OLD_FILES+=usr/lib/i18n/libBIG5.so
+OLD_LIBS+=usr/lib/i18n/libDECHanyu.so.5
+OLD_FILES+=usr/lib/i18n/libDECHanyu.so
+OLD_LIBS+=usr/lib/i18n/libEUC.so.5
+OLD_FILES+=usr/lib/i18n/libEUC.so
+OLD_LIBS+=usr/lib/i18n/libEUCTW.so.5
+OLD_FILES+=usr/lib/i18n/libEUCTW.so
+OLD_LIBS+=usr/lib/i18n/libGBK2K.so.5
+OLD_FILES+=usr/lib/i18n/libGBK2K.so
+OLD_LIBS+=usr/lib/i18n/libHZ.so.5
+OLD_FILES+=usr/lib/i18n/libHZ.so
+OLD_LIBS+=usr/lib/i18n/libISO2022.so.5
+OLD_FILES+=usr/lib/i18n/libISO2022.so
+OLD_LIBS+=usr/lib/i18n/libJOHAB.so.5
+OLD_FILES+=usr/lib/i18n/libJOHAB.so
+OLD_LIBS+=usr/lib/i18n/libMSKanji.so.5
+OLD_FILES+=usr/lib/i18n/libMSKanji.so
+OLD_LIBS+=usr/lib/i18n/libUES.so.5
+OLD_FILES+=usr/lib/i18n/libUES.so
+OLD_LIBS+=usr/lib/i18n/libUTF1632.so.5
+OLD_FILES+=usr/lib/i18n/libUTF1632.so
+OLD_LIBS+=usr/lib/i18n/libUTF7.so.5
+OLD_FILES+=usr/lib/i18n/libUTF7.so
+OLD_LIBS+=usr/lib/i18n/libUTF8.so.5
+OLD_FILES+=usr/lib/i18n/libUTF8.so
+OLD_LIBS+=usr/lib/i18n/libVIQR.so.5
+OLD_FILES+=usr/lib/i18n/libVIQR.so
+OLD_LIBS+=usr/lib/i18n/libZW.so.5
+OLD_FILES+=usr/lib/i18n/libZW.so
+OLD_LIBS+=usr/lib/i18n/libiconv_none.so.5
+OLD_FILES+=usr/lib/i18n/libiconv_none.so
+OLD_LIBS+=usr/lib/i18n/libiconv_std.so.5
+OLD_FILES+=usr/lib/i18n/libiconv_std.so
+OLD_LIBS+=usr/lib/i18n/libmapper_646.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_646.so
+OLD_LIBS+=usr/lib/i18n/libmapper_none.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_none.so
+OLD_LIBS+=usr/lib/i18n/libmapper_parallel.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_parallel.so
+OLD_LIBS+=usr/lib/i18n/libmapper_serial.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_serial.so
+OLD_LIBS+=usr/lib/i18n/libmapper_std.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_std.so
+OLD_LIBS+=usr/lib/i18n/libmapper_zone.so.5
+OLD_FILES+=usr/lib/i18n/libmapper_zone.so
 OLD_FILES+=usr/share/man/man1/iconv.1.gz
 OLD_FILES+=usr/share/man/man1/mkcsmapper.1.gz
 OLD_FILES+=usr/share/man/man1/mkesdb.1.gz
@@ -2468,6 +2523,7 @@ OLD_FILES+=usr/share/man/man3/iconv_open.3.gz
 OLD_FILES+=usr/share/man/man3/iconv_open_into.3.gz
 OLD_FILES+=usr/share/man/man3/iconvctl.3.gz
 OLD_FILES+=usr/share/man/man3/iconvlist.3.gz
+OLD_DIRS+=usr/lib/i18n
 OLD_DIRS+=usr/share/i18n
 OLD_DIRS+=usr/share/i18n/esdb
 OLD_DIRS+=usr/share/i18n/esdb/ISO-2022
@@ -7673,7 +7729,9 @@ OLD_FILES+=etc/periodic/daily/440.status-mailq
 OLD_FILES+=etc/periodic/daily/460.status-mail-rejects
 OLD_FILES+=etc/periodic/daily/500.queuerun
 OLD_FILES+=etc/rc.d/sendmail
+.if ${MK_MAILWRAPPER} == no
 OLD_FILES+=bin/rmail
+.endif
 OLD_FILES+=usr/bin/vacation
 OLD_FILES+=usr/include/libmilter/mfapi.h
 OLD_FILES+=usr/include/libmilter/mfdef.h
@@ -7756,12 +7814,14 @@ OLD_FILES+=usr/share/sendmail/cf/feature/access_db.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/allmasquerade.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/always_add_domain.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/authinfo.m4
+OLD_FILES+=usr/share/sendmail/cf/feature/blocklist_recipients.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/badmx.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/bcc.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/bestmx_is_local.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/bitdomain.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/blacklist_recipients.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/block_bad_helo.m4
+OLD_FILES+=usr/share/sendmail/cf/feature/check_cert_altnames.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/compat_check.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/conncontrol.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/delay_checks.m4
@@ -7804,6 +7864,7 @@ OLD_FILES+=usr/share/sendmail/cf/feature/relay_mail_from.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/require_rdns.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/smrsh.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/stickyhost.m4
+OLD_FILES+=usr/share/sendmail/cf/feature/tls_failures.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/tls_session_features.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/use_client_ptr.m4
 OLD_FILES+=usr/share/sendmail/cf/feature/use_ct_file.m4
@@ -9605,6 +9666,14 @@ OLD_FILES+=usr/share/man/man1/who.1.gz
 OLD_FILES+=usr/share/man/man8/ac.8.gz
 OLD_FILES+=usr/share/man/man8/lastlogin.8.gz
 OLD_FILES+=usr/share/man/man8/utx.8.gz
+.endif
+
+.if ${MK_VERIEXEC} == no
+OLD_FILES+=sbin/veriexec
+OLD_FILES+=usr/share/man/man8/veriexec.8.gz
+OLD_FILES+=usr/lib/libveriexec.a
+OLD_FILES+=usr/lib/libveriexec.so
+OLD_LIBS+=usr/lib/libveriexec.so.5
 .endif
 
 .if ${MK_VI} == no

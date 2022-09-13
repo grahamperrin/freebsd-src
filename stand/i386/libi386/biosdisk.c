@@ -165,7 +165,7 @@ struct devsw biosfd = {
 	.dv_close = bd_close,
 	.dv_ioctl = bd_ioctl,
 	.dv_print = fd_print,
-	.dv_cleanup = NULL
+	.dv_cleanup = nullsys,
 };
 
 struct devsw bioscd = {
@@ -177,7 +177,7 @@ struct devsw bioscd = {
 	.dv_close = bd_close,
 	.dv_ioctl = bd_ioctl,
 	.dv_print = cd_print,
-	.dv_cleanup = NULL
+	.dv_cleanup = nullsys,
 };
 
 struct devsw bioshd = {
@@ -189,7 +189,8 @@ struct devsw bioshd = {
 	.dv_close = bd_close,
 	.dv_ioctl = bd_ioctl,
 	.dv_print = bd_print,
-	.dv_cleanup = NULL
+	.dv_cleanup = nullsys,
+	.dv_fmtdev = disk_fmtdev,
 };
 
 static bdinfo_list_t *
@@ -1031,7 +1032,8 @@ bd_realstrategy(void *devdata, int rw, daddr_t dblk, size_t size,
 		d_offset = dev->d_offset;
 	}
 	if (disk_blocks == 0)
-		disk_blocks = bd->bd_sectors - d_offset;
+		disk_blocks = bd->bd_sectors * (bd->bd_sectorsize /
+		    BIOSDISK_SECSIZE) - d_offset;
 
 	/* Validate source block address. */
 	if (dblk < d_offset || dblk >= d_offset + disk_blocks)

@@ -106,7 +106,6 @@ SYSCTL_INT(_net_inet_ip, OID_AUTO, mbuf_frag_size, CTLFLAG_RW,
 static void	ip_mloopback(struct ifnet *, const struct mbuf *, int);
 
 extern int in_mcast_loop;
-extern	struct protosw inetsw[];
 
 static inline int
 ip_output_pfil(struct mbuf **mp, struct ifnet *ifp, int flags,
@@ -117,9 +116,6 @@ ip_output_pfil(struct mbuf **mp, struct ifnet *ifp, int flags,
 	struct in_addr odst;
 	struct ip *ip;
 	int pflags = PFIL_OUT;
-
-	if (flags & IP_FORWARDING)
-		pflags |= PFIL_FWD;
 
 	m = *mp;
 	ip = mtod(m, struct ip *);

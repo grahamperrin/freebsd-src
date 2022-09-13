@@ -79,9 +79,6 @@ SYSCTL_DECL(_kern_hwpmc);
  */
 
 static int pmclog_buffer_size = PMC_LOG_BUFFER_SIZE;
-#if (__FreeBSD_version < 1100000)
-TUNABLE_INT(PMC_SYSCTL_NAME_PREFIX "logbuffersize", &pmclog_buffer_size);
-#endif
 SYSCTL_INT(_kern_hwpmc, OID_AUTO, logbuffersize, CTLFLAG_RDTUN,
     &pmclog_buffer_size, 0, "size of log buffers in kilobytes");
 
@@ -90,9 +87,6 @@ SYSCTL_INT(_kern_hwpmc, OID_AUTO, logbuffersize, CTLFLAG_RDTUN,
  */
 
 static int pmc_nlogbuffers_pcpu = PMC_NLOGBUFFERS_PCPU;
-#if (__FreeBSD_version < 1100000)
-TUNABLE_INT(PMC_SYSCTL_NAME_PREFIX "nbuffers", &pmc_nlogbuffers_pcpu);
-#endif
 SYSCTL_INT(_kern_hwpmc, OID_AUTO, nbuffers_pcpu, CTLFLAG_RDTUN,
     &pmc_nlogbuffers_pcpu, 0, "number of log buffers per cpu");
 
@@ -1225,7 +1219,7 @@ pmclog_process_userlog(struct pmc_owner *po, struct pmc_op_writelog *wl)
  */
 
 void
-pmclog_initialize()
+pmclog_initialize(void)
 {
 	struct pmclog_buffer *plb;
 	int domain, ncpus, total;
@@ -1274,7 +1268,7 @@ pmclog_initialize()
  */
 
 void
-pmclog_shutdown()
+pmclog_shutdown(void)
 {
 	struct pmclog_buffer *plb;
 	int domain;
