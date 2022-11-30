@@ -1470,13 +1470,18 @@
 </regulatory-domains>
 
 <country-codes>
-<!--
-  ISO 3166 Country/Region codes and regdomain mapping.
 
-  http://ftp.ics.uci.edu/pub/ietf/http/related/iso3166.txt
-  has the list of codes.
-  XXX this table is incomplete
+<!--
+  The country codes section of this file is incomplete. 
+  
+  ISO-3166 alpha2 codes are listed at 
+  <https://www.geonames.org/countries/>. 
+
+  <https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=261024> includes 
+  alternative sources for codes, including the International 
+  Organization for Standardization (ISO®).
 -->
+
 <country id="AL">
   <isocc>8</isocc> <name>Albania</name> <rd ref="none"/>
 </country>
