@@ -1474,12 +1474,9 @@
 <!--
   The country codes section of this file is incomplete. 
   
-  ISO-3166 alpha2 codes are listed at 
-  <https://www.geonames.org/countries/>. 
-
-  <https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=261024> includes 
-  alternative sources for codes, including the International 
-  Organization for Standardization (ISO®).
+  ISO 3166 country codes can be found with the International 
+  Organization for Standardization (ISO®) Online Browsing Platform, at 
+  <https://www.iso.org/obp/ui/#search/code/>
 -->
 
 <country id="AL">
