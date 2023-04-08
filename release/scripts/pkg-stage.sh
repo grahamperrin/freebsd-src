@@ -15,8 +15,7 @@ export PORTSDIR="${PORTSDIR:-/usr/ports}"
 _DVD_PACKAGES="archivers/unzip
 devel/git
 emulators/linux_base-c7
-graphics/drm-legacy-kmod
-graphics/drm-stable-kmod
+graphics/drm-kmod
 misc/freebsd-doc-all
 net/mpd5
 net/rsync
